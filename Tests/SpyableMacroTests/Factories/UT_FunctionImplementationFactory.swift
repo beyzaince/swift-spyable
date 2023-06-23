@@ -25,6 +25,29 @@ final class UT_FunctionImplementationFactory: XCTestCase {
             """
         )
     }
+    
+    func testDeclarationNewVersion() throws {
+        let variablePrefix = "fetchDistricts"
+
+        let protocolFunctionDeclaration = try FunctionDeclSyntax(
+            "func fetchDistricts(forCityCode code: String, location: Location)"
+        ) {}
+
+        let result = FunctionImplementationFactory().declaration(
+            variablePrefix: variablePrefix,
+            protocolFunctionDeclaration: protocolFunctionDeclaration
+        )
+
+        assertBuildResult(
+            result,
+            """
+            func fetchDistricts(forCityCode code: String, location: Location) {
+                invokedList.append(.fetchDistricts(code: code, location: location))
+
+            }
+            """
+        )
+    }
 
     func testDeclarationArguments() throws {
         let variablePrefix = "func_name"
@@ -97,9 +120,6 @@ final class UT_FunctionImplementationFactory: XCTestCase {
                 fooCallsCount += 1
                 fooReceivedBar = (bar)
                 fooReceivedInvocations.append((bar))
-                if let fooThrowableError {
-                    throw fooThrowableError
-                }
                 if fooClosure != nil {
                     return try await fooClosure!(bar)
                 } else {

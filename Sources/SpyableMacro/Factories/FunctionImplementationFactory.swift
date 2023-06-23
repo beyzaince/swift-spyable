@@ -9,7 +9,6 @@ import SwiftSyntaxBuilder
 /// - `CallsCountFactory`: to increment the `CallsCount` each time the function is invoked.
 /// - `ReceivedArgumentsFactory`: to update the `ReceivedArguments` with the arguments of the latest invocation.
 /// - `ReceivedInvocationsFactory`: to append the latest invocation to the `ReceivedInvocations` list.
-/// - `ThrowableErrorFactory`: to provide throw `ThrowableError` expression.
 /// - `ClosureFactory`: to generate a closure expression that mirrors the function signature.
 /// - `ReturnValueFactory`: to provide the return statement from the `ReturnValue`.
 ///
@@ -43,13 +42,10 @@ import SwiftSyntaxBuilder
 /// ```
 /// the factory generates:
 /// ```swift
-/// func fetchText() async throws -> String {
+/// func fetchText() -> String {
 ///     fetchTextCallsCount += 1
-///     if let fetchTextThrowableError {
-///         throw fetchTextThrowableError
-///     }
-///     if fetchTextClosure != nil {
-///         return try await fetchTextClosure!()
+///     if let closure = fetchTextClosure {
+///         return try await closure()
 ///     } else {
 ///         return fetchTextReturnValue
 ///     }
@@ -59,7 +55,6 @@ struct FunctionImplementationFactory {
     private let callsCountFactory = CallsCountFactory()
     private let receivedArgumentsFactory = ReceivedArgumentsFactory()
     private let receivedInvocationsFactory = ReceivedInvocationsFactory()
-    private let throwableErrorFactory = ThrowableErrorFactory()
     private let closureFactory = ClosureFactory()
     private let returnValueFactory = ReturnValueFactory()
 
@@ -78,34 +73,30 @@ struct FunctionImplementationFactory {
             bodyBuilder: {
                 let parameterList = protocolFunctionDeclaration.signature.input.parameterList
 
-                callsCountFactory.incrementVariableExpression(variablePrefix: variablePrefix)
+                //callsCountFactory.incrementVariableExpression(variablePrefix: variablePrefix)
 
                 if !parameterList.isEmpty {
-                    receivedArgumentsFactory.assignValueToVariableExpression(
-                        variablePrefix: variablePrefix,
-                        parameterList: parameterList
-                    )
+//                    receivedArgumentsFactory.assignValueToVariableExpression(
+//                        variablePrefix: variablePrefix,
+//                        parameterList: parameterList
+//                    )
                     receivedInvocationsFactory.appendValueToVariableExpression(
                         variablePrefix: variablePrefix,
                         parameterList: parameterList
                     )
                 }
 
-                if protocolFunctionDeclaration.signature.effectSpecifiers?.throwsSpecifier != nil {
-                    throwableErrorFactory.throwErrorExpression(variablePrefix: variablePrefix)
-                }
-
-                if protocolFunctionDeclaration.signature.output == nil {
-                    closureFactory.callExpression(
-                        variablePrefix: variablePrefix,
-                        functionSignature: protocolFunctionDeclaration.signature
-                    )
-                } else {
-                    returnExpression(
-                        variablePrefix: variablePrefix,
-                        protocolFunctionDeclaration: protocolFunctionDeclaration
-                    )
-                }
+//                if protocolFunctionDeclaration.signature.output == nil {
+//                    closureFactory.callExpression(
+//                        variablePrefix: variablePrefix,
+//                        functionSignature: protocolFunctionDeclaration.signature
+//                    )
+//                } else {
+//                    returnExpression(
+//                        variablePrefix: variablePrefix,
+//                        protocolFunctionDeclaration: protocolFunctionDeclaration
+//                    )
+//                }
             }
         )
     }

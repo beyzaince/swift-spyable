@@ -64,25 +64,15 @@ struct ReceivedInvocationsFactory {
     private func arrayElementType(parameterList: FunctionParameterListSyntax) -> TypeSyntaxProtocol {
         let arrayElementType: TypeSyntaxProtocol
 
-        if parameterList.count == 1, var onlyParameterType = parameterList.first?.type {
-            if let attributedType = onlyParameterType.as(AttributedTypeSyntax.self) {
-                onlyParameterType = attributedType.baseType
-            }
-
-            arrayElementType = onlyParameterType
+        if parameterList.count == 1, let onlyParameter = parameterList.first {
+            arrayElementType = onlyParameter.type
         } else {
             let tupleElements = TupleTypeElementListSyntax {
                 for parameter in parameterList {
                     TupleTypeElementSyntax(
                         name: parameter.secondName ?? parameter.firstName,
                         colon: .colonToken(),
-                        type: {
-                            if let attributedType = parameter.type.as(AttributedTypeSyntax.self) {
-                                return attributedType.baseType
-                            } else {
-                                return parameter.type
-                            }
-                        }()
+                        type: parameter.type
                     )
                 }
             }
@@ -95,11 +85,13 @@ struct ReceivedInvocationsFactory {
     func appendValueToVariableExpression(variablePrefix: String, parameterList: FunctionParameterListSyntax) -> FunctionCallExprSyntax {
         let identifier = variableIdentifier(variablePrefix: variablePrefix)
         let calledExpression = MemberAccessExprSyntax(
-            base: IdentifierExprSyntax(identifier: identifier),
+            base: IdentifierExprSyntax(identifier: "invokedList"),
             dot: .periodToken(),
             name: .identifier("append")
         )
-        let argument = appendArgumentExpression(parameterList: parameterList)
+        
+        let argument = appendArgumentExpression(variablePrefix: variablePrefix,
+                                                parameterList: parameterList)
 
         return FunctionCallExprSyntax(
             calledExpression: calledExpression,
@@ -109,7 +101,8 @@ struct ReceivedInvocationsFactory {
         )
     }
 
-    private func appendArgumentExpression(parameterList: FunctionParameterListSyntax) -> TupleExprElementListSyntax {
+    private func appendArgumentExpression(variablePrefix: String,
+                                          parameterList: FunctionParameterListSyntax) -> TupleExprElementListSyntax {
         let tupleArgument = TupleExprSyntax(
             elementListBuilder: {
                 for parameter in parameterList {
@@ -123,7 +116,20 @@ struct ReceivedInvocationsFactory {
         )
 
         return TupleExprElementListSyntax {
-            TupleExprElementSyntax(expression: tupleArgument)
+            TupleExprElementSyntax(
+                expression: FunctionCallExprSyntax(
+                    calledExpression: MemberAccessExprSyntax(
+                        dot: .periodToken(),
+                        name: .identifier("\(variablePrefix)")
+                    ),
+                    leftParen: .leftParenToken(),
+                    argumentList: TupleExprElementListSyntax(
+                        arrayLiteral: TupleExprElementSyntax(expression: tupleArgument)
+                    ),
+                    rightParen: .rightParenToken()
+                )
+            )
+            
         }
     }
 
